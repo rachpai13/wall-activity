@@ -1,7 +1,7 @@
 ---
 title: "Group 6 — Acute coronary syndrome and Africa"
 subtitle: "Studio wall"
-author: "Group names here"
+author: "jayani, kashyap, rachana"
 format:
   html:
     toc: true
@@ -12,19 +12,9 @@ format:
 
 > Who arrives in acute coronary crisis, which habits travel with that crisis, and where in Africa is life short?
 
-This sentence stays at the top. Every panel must attach to it. If a plot cannot be introduced in a clause that hangs off this line, it is off the wall.
+#This sentence stays at the top. Every panel must attach to it. If a plot cannot be introduced in a clause that hangs off this line, it is off the wall.
 
-# Introduction — the tables we own
-
-This folder is ours for the ten days. Three tables, three shapes.
-
-- **Panel A** (`panel-A.csv`) — ACS clinic file: age, height, weight, BMI, ejection fraction, lipids. `sex` and `obesity` for grouping.
-- **Panel B** (`panel-B.csv`) — same people, Quals: shock, diagnosis, diabetes, high blood pressure, smoking, obesity.
-- **Panel C** (`panel-C.csv`) — gapminder 2007, **Africa only**. Join by country name.
-
-A is the body in crisis. B is the label set. C is not a ward map.
-
-We load from this folder:
+{{< include _setup.qmd >}}
 
 ```{r}
 #1 label: setup
@@ -34,74 +24,112 @@ library(skimr)
 A <- read_csv("data/panel-A.csv")
 ```
 
-
-```{r}
-glimpse(A)
-inspect(A)
-skim(A)
-```
-
 ```{r}
 A_mod <- A |> dplyr::mutate(obesity=as.factor(obesity), sex=as.factor(sex))
 glimpse(A_mod)
 ```
 
-
 ```{r}
-library(ggformula)
-A |> gf_bar( ~ sex, fill = ~obesity)
+glimpse(A)
 ```
 
 ```{r}
-A |> gf_bar( ~ sex, fill = ~obesity, position = "dodge")
+inspect(A)
 ```
 
 ```{r}
-A |> gf_density( ~ BMI, bins = 50, fill = ~ obesity)
-```
-Found tables train the mark. A campus Free Hunch, if we collect one, is a **made** panel of the same pair type — new people, old grammar. It does not replace A, B, or C.
-
-# Panel A — body / measure
-
-*age, BMI, EF, TC, LDLC, HDLC, TG are Quant. obesity and sex are Quals for split.*
-
-
-### 1. See the table
-
-What is a case? Which columns are Quant / Qual? What is missing?
-
-```r
-# glimpse() / inspect() / skim()
+skim(A)
 ```
 
-### 2. Ask
+#Final Questions:
 
-One question *this* table can answer. One it cannot. Write both.
-1. is obesity impacted by age
+1. Are people with more BMI prone to becoming obese? 
+
 ```{r}
-A |> ggplot(aes(x=age, fill=obesity)) + geom_bar()
-#or you can also use A inside like this ONLY IF you're using A in the start, if you're using A in the geom_bar() it wont work., ggplot(A, aes(x=age, fill=obesity)) + geom_bar()
+A |> ggplot(aes(x = obesity, y = BMI, fill = obesity)) + geom_boxplot(color = "black")
 ```
-2. does Ejection fraction decrease with age and obesity (2 variables)
+
 ```{r}
-A |> ggplot() + geom_histogram(aes(x=EF, fill=obesity))
+A |> gf_boxplot(BMI ~ obesity, fill = ~ obesity, title = "BMI vs. Obesity", subtitle = "2 quant variables", caption = "Plotting a Boxplot Graph")
 ```
-2. does Ejection fraction decrease with age and obesity (3 variables)
+
 ```{r}
-A |> gf_bar( age ~ EF, fill= ~obesity, position = "dodge")
+A |> group_by(obesity) |> summarise(mean_BMI = mean(BMI, na.rm = TRUE))
+mosaic::t_test(BMI ~ obesity, data = A)
+```
+
+2. is obesity impacted by age?
+
+```{r}
+A |> ggplot(aes(x = age, fill = obesity)) + geom_histogram(binwidth = 5, position = "dodge", color = "black") #or you can also use A inside like this ONLY IF you're using A in the start, if you're using A in the geom_bar() it wont work., ggplot(A, aes(x=age, fill=obesity)) + geom_bar()
+```
+
+```{r}
+A |> gf_histogram(~ age, fill = ~ obesity, color = "black")
+```
+
+```{r}
+A |> group_by(obesity) |> summarize(mean_age = mean(age, na.rm = TRUE))
+mosaic::t_test(age ~ obesity, data = A)
+```
+
+3. is obesity independent of age
+
+```{r}
+A |> ggplot(aes(x = obesity, y = age, color = sex)) + geom_boxplot()
+```
+
+```{r}
+A |> group_by(age) |> summarise(mean_age = mean(age, na.rm = TRUE))
+mosaic::t_test(age ~ obesity, data = A)
+```
+
+4. is TC associated with LDLC?
+
+```{r}
+A |> ggplot(aes(x = TC, y = LDLC)) + geom_point(alpha = 0.3) + geom_smooth(method = "lm")
+```
+
+5. does cholesterol increase with age?
+
+```{r}
+A |> ggplot(aes(x = TC, y = age, fill = sex)) + geom_boxplot() + geom_jitter(position = position_jitterdodge(jitter.width = 0.2), alpha = 0.3) #+ geom_point() + geom_smooth(method = "lm", se = FALSE #```{r}
+#A |> ggplot(aes(x = age, y = EF, color = sex)) + geom_point() + geom_smooth(method = "lm", color = "black")
+#A |> group_by(EF) |> summarise(mean_age = mean(age, na.rm = TRUE))
+#mosaic::t_test(sex ~ EF, data= A)```)
+```
+
+#Unanswerable Question:
+
+1. Does EF increase or decrease with BMI? (The data doesn't show properly the relation between EF and BMI)
+
+```{r}
+A |> ggplot(aes(x = BMI, y = EF)) + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+2. how much fats can be consumed by a person who has HDL to maintain stable EF?
+3. does more workout lead to increased EF?
+4. how many people with increase in EF due to increase in LDLC have died?
+
+#Unsolvable graph
+
+1. how does HDLC and LDLC vary in the population? (didnt understand how to plot this one)
+```{r}
+A |> ggplot(aes(x = age, y = HDLC)) + geom_point(alpha = 0.3) + geom_smooth()
+A |> ggplot(aes(x = age, y = LDLC)) + geom_point(alpha = 0.3) + geom_smooth()
 ```
 
 ### 3. Choose a mark
 
-Geom, map mark, or (later) test that matches the pair type. Name it before you code.
+Use box plots, histograms, or scatter plots depending on the variable pair being compared.
 
 ### 4. Predict
 
-What do we think we will see? One sentence, before Run.
+Predict whether the variables will show a clear relationship, difference, or no obvious pattern.
 
 ### 5. Make
 
-Human brick first. Optional: one AI prompt, pasted below, only for what section 3 named.
+Create the graph in ggplot2, then use summaries/tests to check whether the observed pattern is meaningful.
 
 ```r
 # human chunk
@@ -166,35 +194,123 @@ Caption + one sentence we will stand behind. Title is a sentence, not a column n
 What this panel cannot do. Which kit table we refused to abuse.
 
 
-# Panel C — place
+# Panel B — category / talk
 
-*Africa-only lifeExp / gdpPercap / pop. Same join brick as other map panels.*
+*smoking × sex, DM × HBP, Dx × cardiogenicShock. Do not histogram smoking.*
 
-Geometry is not in the CSV. Join in R, then use the same seven headings.
+```{r}
+B <- read_csv("data/panel-B.csv")
+glimpse(B)
+inspect(B)
+skim(B)
+```
+```{r}
+B <- B |> mutate(sex = as.factor(sex))
+B <- B |> mutate(across(where(is.character),as.factor))
+B |> glimpse()
+B |> inspect()
+B |> skim()
+```
+1. does obesity differ between males and females
+```{r}
+library(vcd) 
+vcd::structable(obesity ~ sex, data = B) |> vcd::mosaic()
+vcd::structable(obesity ~ sex, data = B) |> vcd::mosaic(type = "expected")
+```
+y variable = measured, x = whats controlled and set by us
+```{r}
+mosaic::xchisq.test(obesity ~ sex, data = B)
+```
+x - squared = t
 
-```r
-# library(sf)
-# library(rnaturalearth)
-# world <- ne_countries(scale = "medium", returnclass = "sf")
-# # join on country name; list the unmatched labels
+Question 1: Does obesity differ between males and females
+```{r}
+library(vcd)
+ vcd::structable(sex ~ obesity, data = B) |> vcd::mosaic()
 ```
 
+Question 2: Are the observed obesity patterns for males and females different from what would be expected by chance?
+```{r}
+library(vcd)
+vcd::structable(sex ~ obesity, data = B) |> vcd::mosaic(type = "expected")
+```
 
-### 1. See the table
+```{r}
+ mosaic::xchisq.test(sex ~ obesity, data = B)
+```
 
-What is a case? Which columns are Quant / Qual? What is missing?
+Question 3: Does smoking status differ across STEMI, NSTEMI, and Unstable Angina patients?
 
-#```{r}
-glimpse() / inspect() / skim()
+```{r}
+B |> gf_bar(~ Dx, fill = ~ smoking, position = "dodge")
+```
+
+Question 4: Is obesity distributed differently across the different diagnosis groups?
+
+```{r}
+B |> gf_bar(~ Dx, fill = ~ obesity, position = "fill")
+```
+
+Question 5: Is cardiogenic shock more common in certain diagnosis groups?
+
+```{r}
+library(vcd)
+vcd::structable(Dx ~ cardiogenicShock, data = B) |> vcd::mosaic()
+```
+
+Question 6: Does the type of entry, Radial or Femoral, differ across diagnosis groups?
+
+```{r}
+B |> gf_bar(~ Dx, fill = ~ entry, position = "dodge")
+```
+
+Question 1: Does obesity differ between males and females
+
+```{r}
+library(vcd)
+ vcd::structable(sex ~ obesity, data = B) |> vcd::mosaic()
+```
+
+Question 2: Are the observed obesity patterns for males and females different from what would be expected by chance?
+
+```{r}
+library(vcd)
+vcd::structable(sex ~ obesity, data = B) |> vcd::mosaic(type = "expected")
+```
+
+```{r}
+ mosaic::xchisq.test(sex ~ obesity, data = B)
+```
+
+Question 3: Does smoking status differ across STEMI, NSTEMI, and Unstable Angina patients?
+
+```{r}
+B |> gf_bar(~ Dx, fill = ~ smoking, position = "dodge")
+```
+
+Question 4: Is obesity distributed differently across the different diagnosis groups?
+
+```{r}
+B |> gf_bar(~ Dx, fill = ~ obesity, position = "fill")
+```
+
+Question 5: Is cardiogenic shock more common in certain diagnosis groups?
+
+```{r}
+library(vcd)
+vcd::structable(Dx ~ cardiogenicShock, data = B) |> vcd::mosaic()
+```
+
+Question 6: Does the type of entry, Radial or Femoral, differ across diagnosis groups?
+
+```{r}
+B |> gf_bar(~ Dx, fill = ~ entry, position = "dodge")
 ```
 
 ### 2. Ask
 
 One question *this* table can answer. One it cannot. Write both.
-1. is obesity independent of sex and age
-2. does ejection fraction decrease with age and obesity
-3. does height, age and sex of the person effect body mass index
-4. do obese patients show higher BMI value than non obese patients
+1.ffff
 
 ### 3. Choose a mark
 
@@ -207,33 +323,6 @@ What do we think we will see? One sentence, before Run.
 ### 5. Make
 
 Human brick first. Optional: one AI prompt, pasted below, only for what section 3 named.
-
-```r
-# human chunk
-
-# ## Prompt we actually used
-# ai_draft
-# ours
-```
-
-### 6. Say
-
-Caption + one sentence we will stand behind. Title is a sentence, not a column name.
-
-### 7. Limit
-
-What this panel cannot do. Which kit table we refused to abuse.
-
-
-# Conclusion
-
-What the spine looks like after three panels.
-
-- The question we will defend in ninety seconds
-- What we will **not** claim
-- Which lines were human, which were machine
-- Limits: sample, missingness, the test we did not run
-- Gift for the steal-this strip (palette, annotation, join trick)
 
 ```r
 # sessionInfo()
